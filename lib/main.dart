@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'map.dart'; // Import the map.dart file
 import 'livestream.dart'; // Import the livestream.dart file
+import 'schedule.dart'; // Import the schedule.dart file
+import 'log_in.dart'; // Import the login screen
 
 void main() {
   runApp(MyApp());
@@ -13,8 +15,27 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.grey,
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        appBarTheme: AppBarTheme(
+          color: Colors.transparent,
+          elevation: 0,
+          iconTheme: IconThemeData(color: Colors.grey[300]!),
+          titleTextStyle: TextStyle(
+            color: Colors.grey[300]!,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.transparent,
+          selectedItemColor: Colors.grey[300]!,
+          unselectedItemColor: Colors.grey[500]!,
+          selectedIconTheme: IconThemeData(size: 30, color: Colors.grey[300]!),
+          unselectedIconTheme: IconThemeData(size: 24, color: Colors.grey[500]!),
+          selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey[300]!),
+          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 12, color: Colors.grey[500]!),
+        ),
       ),
-      home: MapAndLivestreamScreen(),
+      home: LoginScreen(), // Start with the LoginScreen
       debugShowCheckedModeBanner: false,
     );
   }
@@ -26,6 +47,59 @@ class MapAndLivestreamScreen extends StatefulWidget {
 }
 
 class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
+  int _selectedIndex = 0;
+
+  final Map<int, String> _labels = {
+    0: 'Map',
+    1: 'Livestream',
+    2: 'Schedule',
+  };
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'You tapped: ${_labels[index]}',
+          style: TextStyle(color: Colors.black),
+        ),
+        duration: Duration(seconds: 1),
+        backgroundColor: Colors.grey[200]!,
+      ),
+    );
+
+    switch (index) {
+      case 0:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => MapScreen()),
+        );
+        break;
+      case 1:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => LivestreamPage()), // Updated to use LivestreamPage
+        );
+        break;
+      case 2:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ScheduleScreen()),
+        );
+        break;
+    }
+  }
+
+  void _logout() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,119 +108,114 @@ class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.grey[800]!, Colors.grey[600]!], // Grey gradient colors
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              colors: [Colors.grey[800]!, Colors.grey[900]!],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
           ),
         ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.map, size: 28, color: Colors.white),
-            SizedBox(width: 8.0), // Space between icon and title
-            Text(
-              'SantiSync', // Updated title
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: Stack(
-        children: [
-          // Background image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/background5.jpg', // Path to your background image
-              fit: BoxFit.cover, // Ensure the image covers the entire background
-            ),
-          ),
-          // Foreground content
-          Column(
+        elevation: 0,
+        title: Text.rich(
+          TextSpan(
             children: [
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Spacer(), // Takes up available space in the middle
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Expanded(
-                            child: _buildButton(
-                              label: 'Map',
-                              color: Colors.grey[700]!, // Grey color for the button
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => MapScreen(), // Navigate to MapScreen in map.dart
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          SizedBox(width: 16.0), // Space between buttons
-                          Expanded(
-                            child: _buildButton(
-                              label: 'Livestream',
-                              color: Colors.grey[700]!, // Grey color for the button
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => LivestreamScreen(), // Navigate to LivestreamScreen in livestream.dart
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
+              TextSpan(
+                text: 'Sanc',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: Colors.grey[300]!,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 10.0,
+                      color: Colors.black45,
+                      offset: Offset(3, 3),
+                    ),
+                  ],
+                ),
+              ),
+              TextSpan(
+                text: '✞',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: Colors.orangeAccent,
+                ),
+              ),
+              TextSpan(
+                text: 'iSync',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: Colors.grey[300]!,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 10.0,
+                      color: Colors.black45,
+                      offset: Offset(3, 3),
                     ),
                   ],
                 ),
               ),
             ],
           ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.grey[300]!),
+            onPressed: _logout,
+            tooltip: 'Log Out',
+            iconSize: 30,
+          ),
         ],
       ),
-    );
-  }
-
-  // Function to build buttons with enhanced styling
-  Widget _buildButton({
-    required String label,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/background456.jpg',
+              fit: BoxFit.cover,
+            ),
           ),
-          elevation: 5.0, // Add elevation for a more pronounced button effect
+          Column(
+            children: [
+              Expanded(
+                child: Center(
+                  // Additional content can be added here
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.grey[800]!, Colors.grey[900]!],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
-        onPressed: onPressed,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 20, // Increase font size for better visibility
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 1.2, // Add letter spacing for improved readability
-          ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          items: [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.map, color: Colors.orangeAccent),
+              label: 'Map',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.live_tv, color: Colors.orangeAccent),
+              label: 'Livestream',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.schedule, color: Colors.orangeAccent),
+              label: 'Schedule',
+            ),
+          ],
         ),
       ),
     );
