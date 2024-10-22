@@ -8,11 +8,10 @@ class LivestreamPage extends StatefulWidget {
 }
 
 class _LivestreamPageState extends State<LivestreamPage> {
-  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();  // Create instance of RTCVideoRenderer
+  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
   MediaStream? _localStream;
   final FlutterFFmpeg _ffmpeg = FlutterFFmpeg();
 
-  // Set the RTMP URL for Facebook Live
   final String _rtmpUrl = 'rtmp://live-api-s.facebook.com:80/rtmp/FB-1273380167409610-0-AbzuijAMsG1WLlLi';
 
   @override
@@ -23,47 +22,46 @@ class _LivestreamPageState extends State<LivestreamPage> {
 
   @override
   void dispose() {
-    _localStream?.dispose(); // Dispose stream safely
-    _localRenderer.dispose(); // Dispose renderer properly
+    _localStream?.dispose();
+    _localRenderer.dispose();
     super.dispose();
   }
 
   Future<void> _initializeRenderer() async {
     try {
-      await _localRenderer.initialize(); // Initialize the renderer before use
+      await _localRenderer.initialize();
     } catch (e) {
       print('Error initializing renderer: $e');
     }
   }
 
   Future<void> _startLiveStream() async {
-    // Get user media (camera and microphone)
     final Map<String, dynamic> mediaConstraints = {
       'audio': true,
-      'video': {
-        'facingMode': 'user',
-      }
+      'video': {'facingMode': 'user'}
     };
 
     try {
-      // Obtain the media stream from the user's device
       MediaStream stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
       setState(() {
         _localStream = stream;
-        _localRenderer.srcObject = stream; // Set the renderer's source to the media stream
+        _localRenderer.srcObject = stream;
       });
 
-      // Command to start streaming to Facebook using FFmpeg
       String command = [
-        '-f', 'lavfi', '-i', 'anullsrc',        // Handle no audio track in case there's none
-        '-f', 'v4l2', '-i', '/dev/video0',      // Video input (make sure the input matches)
-        '-vcodec', 'libx264',                   // Set the video codec
-        '-preset', 'ultrafast',                 // Set the encoding preset (quality vs speed)
-        '-f', 'flv',                            // Set the output format to FLV for RTMP
-        _rtmpUrl                                // Set the RTMP URL
+        '-f', 'lavfi', '-i', 'anullsrc', // Dummy audio input
+        '-f', 'v4l2', '-i', '/dev/video0', // Video input for Android (adjust if necessary)
+        '-vcodec', 'libx264', // Video codec
+        '-preset', 'ultrafast', // Encoding speed
+        '-f', 'flv', _rtmpUrl // RTMP URL for Facebook
       ].join(' ');
 
-      _ffmpeg.execute(command).then((rc) => print("FFmpeg process exited with rc $rc"));
+      _ffmpeg.execute(command).then((rc) {
+        print("FFmpeg process exited with rc $rc");
+        if (rc != 0) {
+          print("Error occurred: $rc");
+        }
+      });
     } catch (e) {
       print('Error getting user media: $e');
     }
@@ -79,7 +77,6 @@ class _LivestreamPageState extends State<LivestreamPage> {
         _localRenderer.srcObject = null;
       });
 
-      // Cancel the FFmpeg command
       _ffmpeg.cancel();
     }
   }
@@ -90,25 +87,103 @@ class _LivestreamPageState extends State<LivestreamPage> {
       appBar: AppBar(
         title: Text('Church Livestream'),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: RTCVideoView(
-              _localRenderer,
-              mirror: true,
-              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
+          Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/background.jpg'), // Replace with your background image path
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-          ElevatedButton(
-            onPressed: _startLiveStream,
-            child: Text('Start Stream'),
-          ),
-          ElevatedButton(
-            onPressed: _stopLiveStream,
-            child: Text('Stop Stream'),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildStyledButton('STA ANA'),
+                SizedBox(height: 20),
+                _buildStyledButton('ARAYAT'),
+                SizedBox(height: 20),
+                _buildStyledButton('MEXICO'),
+                SizedBox(height: 20),
+                _buildStyledButton('CANDABA'),
+                SizedBox(height: 20),
+                _buildStyledButton('SAN LUIS'),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStyledButton(String title) {
+    return GestureDetector(
+      onTap: () {
+        _showStreamingOptions(title);
+      },
+      child: Container(
+        width: 200,
+        padding: EdgeInsets.symmetric(vertical: 15),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueAccent, Colors.lightBlueAccent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(30.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              offset: Offset(0, 4),
+              blurRadius: 10.0,
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showStreamingOptions(String churchName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('$churchName Livestream Options'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _startLiveStream();
+                },
+                child: Text('Start Streaming'),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _stopLiveStream();
+                },
+                child: Text('Stop Streaming'),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
