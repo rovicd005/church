@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:intl/intl.dart'; // For date formatting
 
+// Main ScheduleScreen with Custom Calendar Integration
 class ScheduleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -151,17 +152,15 @@ class ScheduleScreen extends StatelessWidget {
   }
 }
 
+// ChurchScheduleScreen with the custom calendar widget
 class ChurchScheduleScreen extends StatefulWidget {
   final String churchName;
-
   ChurchScheduleScreen({required this.churchName});
-
   @override
   _ChurchScheduleScreenState createState() => _ChurchScheduleScreenState();
 }
 
 class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
-  CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _selectedDate = DateTime.now();
   Map<DateTime, List<String>> _events = {};
 
@@ -174,25 +173,14 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
       ),
       body: Column(
         children: [
-          TableCalendar(
+          CustomTableCalendar(
+            selectedDay: _selectedDate,
             focusedDay: _selectedDate,
-            firstDay: DateTime(2020),
-            lastDay: DateTime(2030),
-            calendarFormat: _calendarFormat,
-            selectedDayPredicate: (day) => isSameDay(day, _selectedDate),
-            onDaySelected: (selectedDay, focusedDay) {
+            onDaySelected: (selectedDay) {
               setState(() {
                 _selectedDate = selectedDay;
               });
             },
-            onFormatChanged: (format) {
-              if (_calendarFormat != format) {
-                setState(() {
-                  _calendarFormat = format;
-                });
-              }
-            },
-            eventLoader: (day) => _events[day] ?? [],
           ),
           ElevatedButton(
             onPressed: () => _scheduleEvent(),
@@ -228,7 +216,6 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
   Future<Map<String, dynamic>?> _showAddEventDialog() {
     TextEditingController _eventController = TextEditingController();
     TimeOfDay _selectedTime = TimeOfDay.now();
-
     return showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => AlertDialog(
@@ -272,5 +259,144 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
         ],
       ),
     );
+  }
+}
+
+// Custom Calendar Widget
+class CustomTableCalendar extends StatefulWidget {
+  final Function(DateTime) onDaySelected;
+  final DateTime selectedDay;
+  final DateTime focusedDay;
+
+  CustomTableCalendar({
+    required this.onDaySelected,
+    required this.selectedDay,
+    required this.focusedDay,
+  });
+
+  @override
+  _CustomTableCalendarState createState() => _CustomTableCalendarState();
+}
+
+class _CustomTableCalendarState extends State<CustomTableCalendar> {
+  late DateTime _firstDay;
+  late DateTime _lastDay;
+  late DateTime _currentMonth;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstDay = DateTime(widget.focusedDay.year, widget.focusedDay.month, 1);
+    _lastDay = DateTime(widget.focusedDay.year, widget.focusedDay.month + 1, 0);
+    _currentMonth = widget.focusedDay;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildHeader(),
+        _buildDaysOfWeek(),
+        _buildCalendarDays(),
+      ],
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          icon: Icon(Icons.chevron_left),
+          onPressed: _onPreviousMonth,
+        ),
+        Text(
+          DateFormat.yMMMM().format(_currentMonth),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        IconButton(
+          icon: Icon(Icons.chevron_right),
+          onPressed: _onNextMonth,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDaysOfWeek() {
+    List<String> daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: daysOfWeek
+          .map((day) => Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(day, style: TextStyle(fontWeight: FontWeight.bold)),
+      ))
+          .toList(),
+    );
+  }
+
+  Widget _buildCalendarDays() {
+    List<Widget> dayWidgets = [];
+    int totalDays = _lastDay.day;
+
+    int startingIndex = _firstDay.weekday % 7;
+
+    for (int i = 0; i < startingIndex; i++) {
+      dayWidgets.add(Container(width: 32, height: 32));
+    }
+
+    for (int day = 1; day <= totalDays; day++) {
+      DateTime currentDate = DateTime(_currentMonth.year, _currentMonth.month, day);
+
+      bool isSelected = isSameDay(currentDate, widget.selectedDay);
+
+      dayWidgets.add(
+        GestureDetector(
+          onTap: () {
+            widget.onDaySelected(currentDate);
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isSelected ? Colors.blue : Colors.transparent,
+            ),
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            child: Text(
+              day.toString(),
+              style: TextStyle(color: isSelected ? Colors.white : Colors.black),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return GridView.count(
+      crossAxisCount: 7,
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      children: dayWidgets,
+    );
+  }
+
+  void _onPreviousMonth() {
+    setState(() {
+      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
+      _firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
+      _lastDay = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+    });
+  }
+
+  void _onNextMonth() {
+    setState(() {
+      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
+      _firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
+      _lastDay = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+    });
+  }
+
+  bool isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }

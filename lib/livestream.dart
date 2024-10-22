@@ -8,11 +8,10 @@ class LivestreamPage extends StatefulWidget {
 }
 
 class _LivestreamPageState extends State<LivestreamPage> {
-  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();  // Create instance of RTCVideoRenderer
+  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
   MediaStream? _localStream;
   final FlutterFFmpeg _ffmpeg = FlutterFFmpeg();
 
-  // Set the RTMP URL for Facebook Live
   final String _rtmpUrl = 'rtmp://live-api-s.facebook.com:80/rtmp/FB-1273380167409610-0-AbzuijAMsG1WLlLi';
 
   @override
@@ -23,46 +22,33 @@ class _LivestreamPageState extends State<LivestreamPage> {
 
   @override
   void dispose() {
-    _localStream?.dispose(); // Dispose stream safely
-    _localRenderer.dispose(); // Dispose renderer properly
+    _localStream?.dispose();
+    _localRenderer.dispose();
     super.dispose();
   }
 
   Future<void> _initializeRenderer() async {
     try {
-      await _localRenderer.initialize(); // Initialize the renderer before use
+      await _localRenderer.initialize();
     } catch (e) {
       print('Error initializing renderer: $e');
     }
   }
 
   Future<void> _startLiveStream() async {
-    // Get user media (camera and microphone)
     final Map<String, dynamic> mediaConstraints = {
       'audio': true,
-      'video': {
-        'facingMode': 'user',
-      }
+      'video': {'facingMode': 'user'}
     };
 
     try {
-      // Obtain the media stream from the user's device
       MediaStream stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
       setState(() {
         _localStream = stream;
-        _localRenderer.srcObject = stream; // Set the renderer's source to the media stream
+        _localRenderer.srcObject = stream;
       });
 
-      // Command to start streaming to Facebook using FFmpeg
-      String command = [
-        '-f', 'lavfi', '-i', 'anullsrc',        // Handle no audio track in case there's none
-        '-f', 'v4l2', '-i', '/dev/video0',      // Video input (make sure the input matches)
-        '-vcodec', 'libx264',                   // Set the video codec
-        '-preset', 'ultrafast',                 // Set the encoding preset (quality vs speed)
-        '-f', 'flv',                            // Set the output format to FLV for RTMP
-        _rtmpUrl                                // Set the RTMP URL
-      ].join(' ');
-
+      String command = ['-f', 'lavfi', '-i', 'anullsrc', '-f', 'v4l2', '-i', '/dev/video0', '-vcodec', 'libx264', '-preset', 'ultrafast', '-f', 'flv', _rtmpUrl].join(' ');
       _ffmpeg.execute(command).then((rc) => print("FFmpeg process exited with rc $rc"));
     } catch (e) {
       print('Error getting user media: $e');
@@ -79,7 +65,6 @@ class _LivestreamPageState extends State<LivestreamPage> {
         _localRenderer.srcObject = null;
       });
 
-      // Cancel the FFmpeg command
       _ffmpeg.cancel();
     }
   }
@@ -107,8 +92,38 @@ class _LivestreamPageState extends State<LivestreamPage> {
             onPressed: _stopLiveStream,
             child: Text('Stop Stream'),
           ),
+          Center(
+            child: Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.center,
+              children: [
+                _buildButton('STA ANA'),
+                _buildButton('ARAYAT'),
+                _buildButton('MEXICO'),
+                _buildButton('CANDABA'),
+                _buildButton('SAN LUIS'),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
+
+  Widget _buildButton(String title) {
+    return ElevatedButton(
+      onPressed: () {}, // Customize with actual function
+      child: Text(title),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue, // Button color
+        foregroundColor: Colors.white, // Text color, replaces onPrimary
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0), // Rounded corners
+        ),
+      ),
+    );
+  }
+
 }
