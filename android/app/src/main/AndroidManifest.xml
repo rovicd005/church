@@ -2,7 +2,6 @@
     package="com.example.management_church">
 
     <!-- Internet permission for WebView -->
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
@@ -11,6 +10,11 @@
         android:label="management_church"
         android:icon="@mipmap/ic_launcher"
         android:hardwareAccelerated="true"> <!-- Hardware acceleration is critical for WebView -->
+
+        <!-- Add your Google Maps API key here -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCK2gEcEvji226n0EH6pfDyfnoVYEkyNHw"/>
 
         <activity
             android:name=".MainActivity"

@@ -65,8 +65,8 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (await canLaunch(uri.toString())) {
+      await launch(uri.toString(), forceSafariVC: false, forceWebView: false);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not launch URL')),
@@ -77,15 +77,9 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: 'Map'),
+      appBar: CustomAppBar(title: 'Map')                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ,
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/mapbackground.jpg',
-              fit: BoxFit.cover,
-            ),
-          ),
           GoogleMap(
             initialCameraPosition: _initialPosition,
             markers: _createMarkers(),
@@ -95,11 +89,7 @@ class _MapScreenState extends State<MapScreen> {
               });
             },
           ),
-          _buildLocationButton(90, 230, "https://maps.app.goo.gl/ZMpSpT7tfqkRKSL3A"),
-          _buildLocationButton(120, 130, "https://maps.app.goo.gl/tknGGKbpG2qmdFXY9"),
-          _buildLocationButton(5, 210, "https://maps.app.goo.gl/Ev2L7UvbnNKJNmhX6"),
-          _buildLocationButton(280, 230, "https://maps.app.goo.gl/fkGc5XRdfvRhygd7A"),
-          _buildLocationButton(180, 320, "https://maps.app.goo.gl/MDXcHhCz7Zb32iS96"),
+          // Removed all location buttons
         ],
       ),
     );
@@ -113,25 +103,5 @@ class _MapScreenState extends State<MapScreen> {
       Marker(markerId: MarkerId('MEXICO'), position: LatLng(15.0646, 120.7199)),
       Marker(markerId: MarkerId('SAN LUIS'), position: LatLng(15.0383, 120.7897)),
     };
-  }
-
-  Widget _buildLocationButton(double left, double top, String url) {
-    return Positioned(
-      left: left,
-      top: top,
-      child: IconButton(
-        onPressed: () async {
-          try {
-            await _launchURL(url);
-          } catch (e) {
-            print(e);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Could not launch URL')),
-            );
-          }
-        },
-        icon: Icon(Icons.location_on, color: Colors.red, size: 40), // Adjusted size for better fit
-      ),
-    );
   }
 }

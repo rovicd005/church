@@ -12,13 +12,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool _passwordVisible = false; // Add a variable to track password visibility
-  bool _isLoginMode = true; // Toggle between login and register modes
+  bool _passwordVisible = false;
+  bool _isLoginMode = true;
 
+  // Login function
   void _login() async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.68.130/db.php'), // Update with your server's IP or domain
+        Uri.parse('http://192.168.68.122/church/login.php'), // Replace with your server IP
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -28,38 +29,27 @@ class _LoginScreenState extends State<LoginScreen> {
         }),
       );
 
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
       if (response.statusCode == 200) {
-        try {
-          final Map<String, dynamic> data = json.decode(response.body);
-          if (data['success']) {
-            // Navigate to the LoadingScreen after successful login
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => LoadingScreen()),
-            );
-          } else {
-            // Show an error message if login fails
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(data['message'])),
-            );
-          }
-        } catch (e) {
-          print('JSON decoding error: $e');
-          print('Server response: ${response.body}');
+        final Map<String, dynamic> data = json.decode(response.body);
+        if (data['success']) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => LoadingScreen()),
+          );
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('An error occurred. Please try again later.')),
+            SnackBar(content: Text(data['message'])),
           );
         }
       } else {
-        // Print the server response for debugging
-        print('Server responded with status code: ${response.statusCode}');
-        print('Server response: ${response.body}');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Server error: ${response.statusCode}. Please try again later.')),
+          SnackBar(content: Text('Server error: ${response.statusCode}')),
         );
       }
     } catch (e) {
-      // Print any error caught during the request
       print('Error during login: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('An error occurred. Please try again later.')),
@@ -67,10 +57,11 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // Register function
   void _register() async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.68.130/church/register.php'), // Update with your server's IP or domain
+        Uri.parse('http://192.168.68.122/church/register.php'), // Replace with your server IP
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -83,7 +74,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         if (data['success']) {
-          // Show a success message and switch to login mode
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Registration successful. Please log in.')),
           );
@@ -91,21 +81,16 @@ class _LoginScreenState extends State<LoginScreen> {
             _isLoginMode = true;
           });
         } else {
-          // Show an error message if registration fails
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(data['message'])),
           );
         }
       } else {
-        // Print the server response for debugging
-        print('Server responded with status code: ${response.statusCode}');
-        print('Server response: ${response.body}');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Server error: ${response.statusCode}. Please try again later.')),
+          SnackBar(content: Text('Server error: ${response.statusCode}')),
         );
       }
     } catch (e) {
-      // Print any error caught during the request
       print('Error during registration: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('An error occurred. Please try again later.')),
@@ -118,27 +103,23 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background image
           Positioned.fill(
             child: Image.asset(
-              'assets/background456.jpg', // Path to your image
-              fit: BoxFit.cover, // Ensures the image covers the entire screen
+              'assets/background456.jpg',
+              fit: BoxFit.cover,
             ),
           ),
-          // Semi-transparent overlay to improve readability
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.5), // Darken the background
+              color: Colors.black.withOpacity(0.5),
             ),
           ),
-          // Content on top of the background
           Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // App title or logo
                   Text(
                     'Sanc✞iSync',
                     style: TextStyle(
@@ -146,17 +127,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       fontWeight: FontWeight.bold,
                       color: Colors.orangeAccent,
                       letterSpacing: 2.0,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 10.0,
-                          color: Colors.black45,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
                     ),
                   ),
                   SizedBox(height: 50),
-                  // Username input
                   TextField(
                     controller: _usernameController,
                     decoration: InputDecoration(
@@ -173,10 +146,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(color: Colors.white),
                   ),
                   SizedBox(height: 20),
-                  // Password input with show/hide functionality
                   TextField(
                     controller: _passwordController,
-                    obscureText: !_passwordVisible, // Toggle the obscureText property
+                    obscureText: !_passwordVisible,
                     decoration: InputDecoration(
                       labelText: 'Password',
                       labelStyle: TextStyle(color: Colors.orangeAccent),
@@ -194,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         onPressed: () {
                           setState(() {
-                            _passwordVisible = !_passwordVisible; // Toggle password visibility
+                            _passwordVisible = !_passwordVisible;
                           });
                         },
                       ),
@@ -202,17 +174,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(color: Colors.white),
                   ),
                   SizedBox(height: 50),
-                  // Login/Register button
                   ElevatedButton(
                     onPressed: _isLoginMode ? _login : _register,
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(horizontal: 80, vertical: 20),
-                      backgroundColor: Colors.orangeAccent, // Button background color
-                      foregroundColor: Colors.white, // Text color
+                      backgroundColor: Colors.orangeAccent,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      elevation: 5, // Elevation for depth
+                      elevation: 5,
                     ),
                     child: Text(
                       _isLoginMode ? 'Login' : 'Register',
@@ -220,11 +191,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   SizedBox(height: 20),
-                  // Toggle between login and register modes
                   TextButton(
                     onPressed: () {
                       setState(() {
-                        _isLoginMode = !_isLoginMode;
+                        _isLoginMode = !_isLoginMode; // Toggle between login and register
                       });
                     },
                     child: Text(

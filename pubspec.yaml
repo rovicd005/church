@@ -1,39 +1,39 @@
 name: management_church
-description: "A new Flutter project."
+description: "A Flutter project for church management and livestreaming."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-# The following defines the version and build number for your application.
+# Versioning
 version: 1.0.0+1
 
+# Flutter SDK environment
 environment:
-  sdk: '>=3.3.0 <4.0.0'  # Only one sdk key retained
+  sdk: '>=3.3.0 <4.0.0'
 
+# Project dependencies
 dependencies:
   flutter:
     sdk: flutter
-  http: ^0.13.5
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.6
-  google_maps_flutter: ^2.2.0   # Latest version retained
-  url_launcher: ^6.1.10
-  webview_flutter: ^4.2.1       # Latest version retained
-  table_calendar: ^3.0.9        # Calendar scheduling dependency
-  intl: ^0.18.0                 # For handling date formatting
-  shared_preferences: ^2.1.1    # To save events in local storage
-  flutter_webrtc: ^0.9.28
-  flutter_ffmpeg: ^0.4.0
+  http: ^0.13.5                          # For making HTTP requests
+  cupertino_icons: ^1.0.6                 # iOS style icons
+  google_maps_flutter: ^2.2.0             # Google Maps integration
+  url_launcher: ^6.1.10                   # For opening URLs
+  webview_flutter: ^4.2.1                 # Embedding web content
+  table_calendar: ^3.0.9                  # Calendar scheduling
+  intl: ^0.18.0                           # Date formatting and internationalization
+  shared_preferences: ^2.1.1              # Local storage for user preferences
+  flutter_webrtc: ^0.9.28                 # WebRTC for livestreaming
+  flutter_ffmpeg: ^0.4.0                  # FFmpeg for video streaming
+  web_socket_channel: ^2.1.0              # WebSocket channel for OBS control
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^3.0.0                   # Linting for code quality
 
-
+# Flutter assets
 flutter:
   uses-material-design: true
   assets:
-
     - assets/background00.jpg
     - assets/background01.jpg
     - assets/background02.jpg

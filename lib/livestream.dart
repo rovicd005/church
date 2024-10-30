@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LivestreamPage extends StatefulWidget {
   @override
@@ -12,7 +13,11 @@ class _LivestreamPageState extends State<LivestreamPage> {
   MediaStream? _localStream;
   final FlutterFFmpeg _ffmpeg = FlutterFFmpeg();
 
-  final String _rtmpUrl = 'rtmp://live-api-s.facebook.com:80/rtmp/FB-1273380167409610-0-AbzuijAMsG1WLlLi';
+  // Default RTMP URL, dynamically updated based on the selected church
+  String _rtmpUrl = 'rtmp://live-api-s.facebook.com:80/rtmp/FB-1273380167409610-0-AbzuijAMsG1WLlLi';
+
+  // URL for the live view on the streaming platform
+  String _liveViewUrl = 'https://www.facebook.com/live/producer'; // Replace with the specific live page URL
 
   @override
   void initState() {
@@ -49,17 +54,20 @@ class _LivestreamPageState extends State<LivestreamPage> {
       });
 
       String command = [
-        '-f', 'lavfi', '-i', 'anullsrc', // Dummy audio input
-        '-f', 'v4l2', '-i', '/dev/video0', // Video input for Android (adjust if necessary)
+        '-f', 'lavfi', '-i', 'anullsrc', // Dummy audio input for RTMP
+        '-f', 'v4l2', '-i', '/dev/video0', // Video input (adjust if necessary for your device)
         '-vcodec', 'libx264', // Video codec
         '-preset', 'ultrafast', // Encoding speed
-        '-f', 'flv', _rtmpUrl // RTMP URL for Facebook
+        '-f', 'flv', _rtmpUrl // RTMP URL for the specific church
       ].join(' ');
 
       _ffmpeg.execute(command).then((rc) {
         print("FFmpeg process exited with rc $rc");
-        if (rc != 0) {
-          print("Error occurred: $rc");
+        if (rc == 0) {
+          print("Stream started successfully");
+          _openLiveStreamPage(); // Open the live stream page after starting the stream
+        } else {
+          print("Error occurred during streaming: $rc");
         }
       });
     } catch (e) {
@@ -78,6 +86,15 @@ class _LivestreamPageState extends State<LivestreamPage> {
       });
 
       _ffmpeg.cancel();
+      print("Stream stopped");
+    }
+  }
+
+  Future<void> _openLiveStreamPage() async {
+    if (await canLaunch(_liveViewUrl)) {
+      await launch(_liveViewUrl);
+    } else {
+      print("Could not open the live stream page.");
     }
   }
 
@@ -157,6 +174,12 @@ class _LivestreamPageState extends State<LivestreamPage> {
   }
 
   void _showStreamingOptions(String churchName) {
+    // Dynamically set RTMP URL based on the church name
+    setState(() {
+      _rtmpUrl = _getRtmpUrlForChurch(churchName);
+      _liveViewUrl = 'https://www.facebook.com/live/producer'; // Replace with actual live view URL if needed
+    });
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -185,5 +208,23 @@ class _LivestreamPageState extends State<LivestreamPage> {
         );
       },
     );
+  }
+
+  String _getRtmpUrlForChurch(String churchName) {
+    // Return a unique RTMP URL for each church
+    switch (churchName) {
+      case 'STA ANA':
+        return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-STA-ANA';
+      case 'ARAYAT':
+        return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-ARAYAT';
+      case 'MEXICO':
+        return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-MEXICO';
+      case 'CANDABA':
+        return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-CANDABA';
+      case 'SAN LUIS':
+        return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-SAN-LUIS';
+      default:
+        return _rtmpUrl; // Default to the initial RTMP URL if no match
+    }
   }
 }

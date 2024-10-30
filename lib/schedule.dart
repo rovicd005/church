@@ -164,6 +164,7 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _selectedDate = DateTime.now();
   Map<DateTime, List<String>> _events = {};
+  String? _selectedEvent; // Track the currently selected event
 
   @override
   Widget build(BuildContext context) {
@@ -200,14 +201,53 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
           ),
           Expanded(
             child: ListView(
-              children: _events[_selectedDate]?.map((event) => ListTile(
-                title: Text(event),
-              ))?.toList() ?? [Text('No events scheduled')],
+              children: _events[_selectedDate]?.map((event) => _buildEventItem(event)).toList() ?? [Text('No events scheduled')],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildEventItem(String event) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedEvent = (_selectedEvent == event) ? null : event;
+        });
+      },
+      child: Card(
+        margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        elevation: 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: ListTile(
+          title: Text(
+            event,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          trailing: (_selectedEvent == event)
+              ? IconButton(
+            icon: Icon(Icons.delete, color: Colors.red),
+            onPressed: () {
+              _deleteEvent(event);
+            },
+          )
+              : null,
+        ),
+      ),
+    );
+  }
+
+  void _deleteEvent(String event) {
+    setState(() {
+      _events[_selectedDate]?.remove(event);
+      if (_events[_selectedDate]?.isEmpty ?? false) {
+        _events.remove(_selectedDate);
+      }
+      _selectedEvent = null; // Clear the selected event after deletion
+    });
   }
 
   void _scheduleEvent() async {
