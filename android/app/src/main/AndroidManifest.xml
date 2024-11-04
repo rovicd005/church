@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
     <application
-        android:label="management_church"
+        android:label="SantiSync"
         android:icon="@mipmap/ic_launcher"
         android:hardwareAccelerated="true"> <!-- Hardware acceleration is critical for WebView -->
 

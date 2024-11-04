@@ -30,6 +30,14 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^3.0.0                   # Linting for code quality
 
+flutter_icons:
+    android: true
+    ios: true
+    image_path: "assets/ic_launcher.png"
+    adaptive_icon_background: "#FFA500"
+    adaptive_icon_foreground: "assets/ic_launcher.png"
+
+
 # Flutter assets
 flutter:
   uses-material-design: true
@@ -42,11 +50,15 @@ flutter:
     - assets/background05.jpg
     - assets/background000.jpg
     - assets/background456.jpg
-    - assets/background789.jpg
     - assets/background77.jpg
-    - assets/background66.jpg
     - assets/backgroundloading.jpg
-    - assets/backgroundls.jpg
     - assets/backgroundscreen.jpg
     - assets/background555.jpg
     - assets/mapbackground.jpg
+    - assets/luis.jpg
+    - assets/mex.jpg
+    - assets/ar.jpg
+    - assets/sa.jpg
+
+
+

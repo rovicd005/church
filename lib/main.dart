@@ -1,9 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'map.dart'; // Import the map.dart file
 import 'livestream.dart'; // Import the livestream.dart file
 import 'schedule.dart'; // Import the schedule.dart file
-import 'log_in.dart'; // Import the login screen
+import 'loading_screen.dart'; // Import the loading screen file
 
 void main() {
   runApp(MyApp());
@@ -36,7 +35,7 @@ class MyApp extends StatelessWidget {
           unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 12, color: Colors.grey[500]!),
         ),
       ),
-      home: LoginScreen(), // Start with the LoginScreen
+      home: LoadingScreen(), // Start with the LoadingScreen
       debugShowCheckedModeBanner: false,
     );
   }
@@ -92,13 +91,6 @@ class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
         );
         break;
     }
-  }
-
-  void _logout() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginScreen()),
-    );
   }
 
   @override
@@ -163,14 +155,6 @@ class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
             ],
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout, color: Colors.grey[300]!),
-            onPressed: _logout,
-            tooltip: 'Log Out',
-            iconSize: 30,
-          ),
-        ],
       ),
       body: Stack(
         children: [

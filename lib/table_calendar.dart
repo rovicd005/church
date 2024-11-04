@@ -1,161 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // For date formatting
+import 'package:intl/intl.dart';
 
-// Main ScheduleScreen with Custom Calendar Integration
-class ScheduleScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/background000.jpg',
-              fit: BoxFit.cover,
-            ),
-          ),
-          Column(
-            children: [
-              PreferredSize(
-                preferredSize: Size.fromHeight(70.0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(30.0),
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.grey[900]!, Colors.grey[700]!],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: AppBar(
-                      centerTitle: true,
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                      title: Text(
-                        'Schedule',
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildChurchButton(context, 'Sta Ana', 'assets/background01.jpg'),
-                      _buildChurchButton(context, 'Candaba', 'assets/background02.jpg'),
-                      _buildChurchButton(context, 'Arayat', 'assets/background05.jpg'),
-                      _buildChurchButton(context, 'San Luis', 'assets/background03.jpg'),
-                      _buildChurchButton(context, 'Mexico', 'assets/background04.jpg'),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChurchButton(BuildContext context, String churchName, String imagePath) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.15,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  gradient: LinearGradient(
-                    colors: [Colors.black.withOpacity(0.4), Colors.black.withOpacity(0.1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  image: DecorationImage(
-                    image: AssetImage(imagePath),
-                    fit: BoxFit.cover,
-                    colorFilter: ColorFilter.mode(
-                      Colors.black.withOpacity(0.7),
-                      BlendMode.dstATop,
-                    ),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.5),
-                      blurRadius: 10,
-                      offset: Offset(2, 2),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Center(
-              child: Text(
-                churchName,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2.0,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 5.0,
-                      color: Colors.black.withOpacity(0.8),
-                      offset: Offset(2.0, 2.0),
-                    ),
-                  ],
-                  decoration: TextDecoration.none,
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(15),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChurchScheduleScreen(churchName: churchName),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ChurchScheduleScreen with the custom calendar widget
 class ChurchScheduleScreen extends StatefulWidget {
   final String churchName;
   ChurchScheduleScreen({required this.churchName});
+
   @override
   _ChurchScheduleScreenState createState() => _ChurchScheduleScreenState();
 }
@@ -262,7 +111,6 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
   }
 }
 
-// Custom Calendar Widget
 class CustomTableCalendar extends StatefulWidget {
   final Function(DateTime) onDaySelected;
   final DateTime selectedDay;
@@ -286,9 +134,14 @@ class _CustomTableCalendarState extends State<CustomTableCalendar> {
   @override
   void initState() {
     super.initState();
-    _firstDay = DateTime(widget.focusedDay.year, widget.focusedDay.month, 1);
-    _lastDay = DateTime(widget.focusedDay.year, widget.focusedDay.month + 1, 0);
+    _updateDateRange();
+  }
+
+  void _updateDateRange() {
     _currentMonth = widget.focusedDay;
+    // Set the view to cover only two weeks as per default view
+    _firstDay = _currentMonth.subtract(Duration(days: _currentMonth.weekday - 1));
+    _lastDay = _firstDay.add(Duration(days: 13)); // Two weeks (14 days)
   }
 
   @override
@@ -337,17 +190,14 @@ class _CustomTableCalendarState extends State<CustomTableCalendar> {
 
   Widget _buildCalendarDays() {
     List<Widget> dayWidgets = [];
-    int totalDays = _lastDay.day;
-
     int startingIndex = _firstDay.weekday % 7;
 
     for (int i = 0; i < startingIndex; i++) {
       dayWidgets.add(Container(width: 32, height: 32));
     }
 
-    for (int day = 1; day <= totalDays; day++) {
+    for (int day = _firstDay.day; day <= _lastDay.day; day++) {
       DateTime currentDate = DateTime(_currentMonth.year, _currentMonth.month, day);
-
       bool isSelected = isSameDay(currentDate, widget.selectedDay);
 
       dayWidgets.add(
@@ -383,16 +233,14 @@ class _CustomTableCalendarState extends State<CustomTableCalendar> {
   void _onPreviousMonth() {
     setState(() {
       _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
-      _firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
-      _lastDay = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+      _updateDateRange();
     });
   }
 
   void _onNextMonth() {
     setState(() {
       _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
-      _firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
-      _lastDay = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+      _updateDateRange();
     });
   }
 

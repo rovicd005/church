@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:http/http.dart' as http;
 
 class ScheduleScreen extends StatelessWidget {
   @override
@@ -58,11 +60,11 @@ class ScheduleScreen extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildChurchButton(context, 'Sta Ana', 'assets/background01.jpg'),
+                      _buildChurchButton(context, 'Sta Ana', 'assets/sa.jpg'),
                       _buildChurchButton(context, 'Candaba', 'assets/background02.jpg'),
-                      _buildChurchButton(context, 'Arayat', 'assets/background05.jpg'),
-                      _buildChurchButton(context, 'San Luis', 'assets/background03.jpg'),
-                      _buildChurchButton(context, 'Mexico', 'assets/background04.jpg'),
+                      _buildChurchButton(context, 'Arayat', 'assets/ar.jpg'),
+                      _buildChurchButton(context, 'San Luis', 'assets/luis.jpg'),
+                      _buildChurchButton(context, 'Mexico', 'assets/mex.jpg'),
                     ],
                   ),
                 ),
@@ -164,7 +166,99 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _selectedDate = DateTime.now();
   Map<DateTime, List<String>> _events = {};
-  String? _selectedEvent; // Track the currently selected event
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchEvents();
+  }
+
+  Future<void> _fetchEvents() async {
+    final url = Uri.parse('https://sanctisync.site/church/schedules/get_church_events.php?church_name=${widget.churchName}');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      try {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> eventsList = data['events'] ?? [];
+
+        final Map<DateTime, List<String>> loadedEvents = {};
+
+        for (var event in eventsList) {
+          DateTime eventDate = DateTime.parse(event['event_date']);
+          String eventName = event['event_name'];
+          String eventTime = event['event_time'];
+
+          if (loadedEvents[eventDate] == null) {
+            loadedEvents[eventDate] = [];
+          }
+          loadedEvents[eventDate]?.add("$eventName at $eventTime");
+        }
+
+        setState(() {
+          _events = loadedEvents;
+        });
+      } catch (e) {
+        print("Error parsing response: $e");
+      }
+    } else {
+      print("Failed to load events. Status code: ${response.statusCode}");
+    }
+  }
+
+  Future<void> _addAndDisplayEvent(String title, TimeOfDay time) async {
+    final url = Uri.parse('https://sanctisync.site/church/schedules/add_church_event.php');
+    final response = await http.post(url, body: {
+      'church_name': widget.churchName,
+      'event_name': title,
+      'event_date': _selectedDate.toIso8601String().split('T')[0], // Only the date part
+      'event_time': '${time.hour}:${time.minute.toString().padLeft(2, '0')}' // Formatting time
+    });
+
+    if (response.statusCode == 200) {
+      try {
+        final responseData = json.decode(response.body);
+        if (responseData['success'] == true) {
+          setState(() {
+            if (_events[_selectedDate] == null) {
+              _events[_selectedDate] = [];
+            }
+            _events[_selectedDate]?.add("$title at ${time.format(context)}");
+          });
+        } else {
+          print("Error from server: ${responseData['message']}");
+        }
+      } catch (e) {
+        print("Error decoding response: $e");
+      }
+    } else {
+      print("Failed to add event. Status code: ${response.statusCode}");
+    }
+  }
+
+  Future<void> _deleteEvent(String event) async {
+    final parts = event.split(" at ");
+    if (parts.length != 2) return;
+
+    final url = Uri.parse('https://sanctisync.site/church/schedules/delete_church_event.php');
+    final response = await http.post(url, body: {
+      'church_name': widget.churchName,
+      'event_name': parts[0],
+      'event_date': _selectedDate.toIso8601String().split('T')[0], // Only the date part
+      'event_time': parts[1],
+    });
+
+    if (response.statusCode == 200) {
+      setState(() {
+        _events[_selectedDate]?.remove(event);
+        if (_events[_selectedDate]?.isEmpty ?? false) {
+          _events.remove(_selectedDate);
+        }
+      });
+    } else {
+      print("Failed to delete event. Status code: ${response.statusCode}");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -173,81 +267,57 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
         title: Text("${widget.churchName} Schedule"),
         backgroundColor: Colors.grey[850],
       ),
-      body: Column(
-        children: [
-          TableCalendar(
-            focusedDay: _selectedDate,
-            firstDay: DateTime(2020),
-            lastDay: DateTime(2030),
-            calendarFormat: _calendarFormat,
-            selectedDayPredicate: (day) => isSameDay(day, _selectedDate),
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDate = selectedDay;
-              });
-            },
-            onFormatChanged: (format) {
-              if (_calendarFormat != format) {
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Column(
+          children: [
+            TableCalendar(
+              focusedDay: _selectedDate,
+              firstDay: DateTime(2020),
+              lastDay: DateTime(2030),
+              calendarFormat: _calendarFormat,
+              selectedDayPredicate: (day) => isSameDay(day, _selectedDate),
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDate = selectedDay;
+                });
+              },
+              onFormatChanged: (format) {
                 setState(() {
                   _calendarFormat = format;
                 });
-              }
-            },
-            eventLoader: (day) => _events[day] ?? [],
-          ),
-          ElevatedButton(
-            onPressed: () => _scheduleEvent(),
-            child: Text('Schedule Event for ${widget.churchName}'),
-          ),
-          Expanded(
-            child: ListView(
-              children: _events[_selectedDate]?.map((event) => _buildEventItem(event)).toList() ?? [Text('No events scheduled')],
+              },
+              eventLoader: (day) => _events[day] ?? [],
             ),
-          ),
-        ],
+            SizedBox(height: 16.0),
+            ElevatedButton(
+              onPressed: () => _scheduleEvent(),
+              child: Text('Schedule Event for ${widget.churchName}'),
+            ),
+            Expanded(
+              child: ListView(
+                children: (_events[_selectedDate] ?? [])
+                    .map((event) => _buildEventItem(event))
+                    .toList(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildEventItem(String event) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedEvent = (_selectedEvent == event) ? null : event;
-        });
-      },
-      child: Card(
-        margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        elevation: 3,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        child: ListTile(
-          title: Text(
-            event,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          trailing: (_selectedEvent == event)
-              ? IconButton(
-            icon: Icon(Icons.delete, color: Colors.red),
-            onPressed: () {
-              _deleteEvent(event);
-            },
-          )
-              : null,
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      child: ListTile(
+        title: Text(event),
+        trailing: IconButton(
+          icon: Icon(Icons.delete, color: Colors.red),
+          onPressed: () => _deleteEvent(event),
         ),
       ),
     );
-  }
-
-  void _deleteEvent(String event) {
-    setState(() {
-      _events[_selectedDate]?.remove(event);
-      if (_events[_selectedDate]?.isEmpty ?? false) {
-        _events.remove(_selectedDate);
-      }
-      _selectedEvent = null; // Clear the selected event after deletion
-    });
   }
 
   void _scheduleEvent() async {
@@ -255,13 +325,7 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
     if (eventDetails != null && eventDetails['title'] != null && eventDetails['time'] != null) {
       String eventTitle = eventDetails['title'];
       TimeOfDay eventTime = eventDetails['time'];
-      setState(() {
-        if (_events[_selectedDate] != null) {
-          _events[_selectedDate]?.add("$eventTitle at ${eventTime.format(context)}");
-        } else {
-          _events[_selectedDate] = ["$eventTitle at ${eventTime.format(context)}"];
-        }
-      });
+      await _addAndDisplayEvent(eventTitle, eventTime);
     }
   }
 

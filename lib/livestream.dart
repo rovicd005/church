@@ -13,11 +13,8 @@ class _LivestreamPageState extends State<LivestreamPage> {
   MediaStream? _localStream;
   final FlutterFFmpeg _ffmpeg = FlutterFFmpeg();
 
-  // Default RTMP URL, dynamically updated based on the selected church
   String _rtmpUrl = 'rtmp://live-api-s.facebook.com:80/rtmp/FB-1273380167409610-0-AbzuijAMsG1WLlLi';
-
-  // URL for the live view on the streaming platform
-  String _liveViewUrl = 'https://www.facebook.com/live/producer'; // Replace with the specific live page URL
+  String _liveViewUrl = 'https://www.facebook.com/live/producer';
 
   @override
   void initState() {
@@ -54,18 +51,18 @@ class _LivestreamPageState extends State<LivestreamPage> {
       });
 
       String command = [
-        '-f', 'lavfi', '-i', 'anullsrc', // Dummy audio input for RTMP
-        '-f', 'v4l2', '-i', '/dev/video0', // Video input (adjust if necessary for your device)
-        '-vcodec', 'libx264', // Video codec
-        '-preset', 'ultrafast', // Encoding speed
-        '-f', 'flv', _rtmpUrl // RTMP URL for the specific church
+        '-f', 'lavfi', '-i', 'anullsrc',
+        '-f', 'v4l2', '-i', '/dev/video0',
+        '-vcodec', 'libx264',
+        '-preset', 'ultrafast',
+        '-f', 'flv', _rtmpUrl
       ].join(' ');
 
       _ffmpeg.execute(command).then((rc) {
         print("FFmpeg process exited with rc $rc");
         if (rc == 0) {
           print("Stream started successfully");
-          _openLiveStreamPage(); // Open the live stream page after starting the stream
+          _openLiveStreamPage();
         } else {
           print("Error occurred during streaming: $rc");
         }
@@ -102,7 +99,10 @@ class _LivestreamPageState extends State<LivestreamPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Church Livestream'),
+        title: Text("Church Livestream"),
+        backgroundColor: Colors.grey[850], // Custom background color
+        centerTitle: true,
+        elevation: 4.0,
       ),
       body: Stack(
         children: [
@@ -145,7 +145,7 @@ class _LivestreamPageState extends State<LivestreamPage> {
         padding: EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blueAccent, Colors.lightBlueAccent],
+            colors: [Colors.blueAccent, Colors.lightBlue],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -174,10 +174,9 @@ class _LivestreamPageState extends State<LivestreamPage> {
   }
 
   void _showStreamingOptions(String churchName) {
-    // Dynamically set RTMP URL based on the church name
     setState(() {
       _rtmpUrl = _getRtmpUrlForChurch(churchName);
-      _liveViewUrl = 'https://www.facebook.com/live/producer'; // Replace with actual live view URL if needed
+      _liveViewUrl = 'https://www.facebook.com/live/producer';
     });
 
     showDialog(
@@ -211,7 +210,6 @@ class _LivestreamPageState extends State<LivestreamPage> {
   }
 
   String _getRtmpUrlForChurch(String churchName) {
-    // Return a unique RTMP URL for each church
     switch (churchName) {
       case 'STA ANA':
         return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-STA-ANA';
@@ -224,7 +222,7 @@ class _LivestreamPageState extends State<LivestreamPage> {
       case 'SAN LUIS':
         return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-SAN-LUIS';
       default:
-        return _rtmpUrl; // Default to the initial RTMP URL if no match
+        return _rtmpUrl;
     }
   }
 }
