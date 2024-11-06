@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'map.dart'; // Import the map.dart file
-import 'livestream.dart'; // Import the livestream.dart file
-import 'schedule.dart'; // Import the schedule.dart file
-import 'loading_screen.dart'; // Import the loading screen file
+import 'log_in.dart'; // Import the login screen
+import 'map.dart'; // Import the map screen
+import 'livestream.dart'; // Import the livestream screen
+import 'schedule.dart'; // Import the schedule screen
 
 void main() {
   runApp(MyApp());
@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
           unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 12, color: Colors.grey[500]!),
         ),
       ),
-      home: LoadingScreen(), // Start with the LoadingScreen
+      home: LoginScreen(), // Start with the LoginScreen
       debugShowCheckedModeBanner: false,
     );
   }
@@ -81,7 +81,7 @@ class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
       case 1:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => LivestreamPage()), // Updated to use LivestreamPage
+          MaterialPageRoute(builder: (context) => LivestreamPage()),
         );
         break;
       case 2:
