@@ -13,11 +13,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^0.13.3                          # For making HTTP requests
+  http: ^0.13.3                           # For making HTTP requests
   cupertino_icons: ^1.0.6                 # iOS style icons
   google_maps_flutter: ^2.2.0             # Google Maps integration
-  url_launcher: ^6.1.10                   # For opening URLs
-  webview_flutter: ^4.2.1                 # Embedding web content
+  url_launcher: ^6.0.9                    # or the latest version compatible with your Flutter SDK
+  webview_flutter: ^4.0.0
+  webview_flutter_android: ^3.16.3
+  webview_flutter_wkwebview: ^3.14.0      # Embedding web content
   table_calendar: ^3.0.9                  # Calendar scheduling
   intl: ^0.18.0                           # Date formatting and internationalization
   shared_preferences: ^2.1.1              # Local storage for user preferences
@@ -59,6 +61,6 @@ flutter:
     - assets/mex.jpg
     - assets/ar.jpg
     - assets/sa.jpg
-
+    - assets/sf-img.jpg
 
 

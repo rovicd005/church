@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
+import 'livestream_viewer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LivestreamPage extends StatefulWidget {
@@ -9,125 +8,107 @@ class LivestreamPage extends StatefulWidget {
 }
 
 class _LivestreamPageState extends State<LivestreamPage> {
-  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
-  MediaStream? _localStream;
-  final FlutterFFmpeg _ffmpeg = FlutterFFmpeg();
+  final Map<String, bool> _churchStatus = {
+    'STA ANA': true,
+    'ARAYAT': false,
+    'MEXICO': true,
+    'CANDABA': false,
+    'SAN LUIS': false,
+  };
 
-  String _rtmpUrl = 'rtmp://live-api-s.facebook.com:80/rtmp/FB-1273380167409610-0-AbzuijAMsG1WLlLi';
-  String _liveViewUrl = 'https://www.facebook.com/live/producer';
+  final Map<String, String> _scheduledTimes = {
+    'ARAYAT': '10:00 AM',
+    'CANDABA': '12:00 PM',
+    'SAN LUIS': '3:00 PM',
+  };
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeRenderer();
-  }
-
-  @override
-  void dispose() {
-    _localStream?.dispose();
-    _localRenderer.dispose();
-    super.dispose();
-  }
-
-  Future<void> _initializeRenderer() async {
-    try {
-      await _localRenderer.initialize();
-    } catch (e) {
-      print('Error initializing renderer: $e');
-    }
-  }
-
-  Future<void> _startLiveStream() async {
-    final Map<String, dynamic> mediaConstraints = {
-      'audio': true,
-      'video': {'facingMode': 'user'}
-    };
-
-    try {
-      MediaStream stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-      setState(() {
-        _localStream = stream;
-        _localRenderer.srcObject = stream;
-      });
-
-      String command = [
-        '-f', 'lavfi', '-i', 'anullsrc',
-        '-f', 'v4l2', '-i', '/dev/video0',
-        '-vcodec', 'libx264',
-        '-preset', 'ultrafast',
-        '-f', 'flv', _rtmpUrl
-      ].join(' ');
-
-      _ffmpeg.execute(command).then((rc) {
-        print("FFmpeg process exited with rc $rc");
-        if (rc == 0) {
-          print("Stream started successfully");
-          _openLiveStreamPage();
-        } else {
-          print("Error occurred during streaming: $rc");
-        }
-      });
-    } catch (e) {
-      print('Error getting user media: $e');
-    }
-  }
-
-  Future<void> _stopLiveStream() async {
-    if (_localStream != null) {
-      for (var track in _localStream!.getTracks()) {
-        track.stop();
-      }
-      setState(() {
-        _localStream = null;
-        _localRenderer.srcObject = null;
-      });
-
-      _ffmpeg.cancel();
-      print("Stream stopped");
-    }
-  }
-
-  Future<void> _openLiveStreamPage() async {
-    if (await canLaunch(_liveViewUrl)) {
-      await launch(_liveViewUrl);
-    } else {
-      print("Could not open the live stream page.");
-    }
-  }
+  final Map<String, String> _churchImages = {
+    'STA ANA': 'assets/sa.jpg',
+    'ARAYAT': 'assets/ar.jpg',
+    'MEXICO': 'assets/mex.jpg',
+    'CANDABA': 'assets/background02.jpg',
+    'SAN LUIS': 'assets/luis.jpg',
+  };
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Church Livestream"),
-        backgroundColor: Colors.grey[850], // Custom background color
+        backgroundColor: Colors.grey[850],
         centerTitle: true,
         elevation: 4.0,
       ),
-      body: Stack(
+      body: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          children: _churchStatus.keys.map((churchName) {
+            bool isLive = _churchStatus[churchName]!;
+            return _buildChurchCard(churchName, isLive);
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChurchCard(String churchName, bool isLive) {
+    return GestureDetector(
+      onTap: () {
+        _showStreamingOptions(context, churchName);
+      },
+      child: Stack(
         children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12.0),
+            child: Image.asset(
+              _churchImages[churchName] ?? 'assets/default.jpg',
+              height: double.infinity,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
           Container(
             decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/background.jpg'), // Replace with your background image path
-                fit: BoxFit.cover,
+              borderRadius: BorderRadius.circular(12.0),
+              color: Colors.black.withOpacity(0.3),
+            ),
+          ),
+          Positioned(
+            top: 10,
+            left: 10,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isLive ? Colors.red : Colors.grey[700],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                isLive ? 'Live Now' : 'Next Mass at ${_scheduledTimes[churchName] ?? 'N/A'}',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildStyledButton('STA ANA'),
-                SizedBox(height: 20),
-                _buildStyledButton('ARAYAT'),
-                SizedBox(height: 20),
-                _buildStyledButton('MEXICO'),
-                SizedBox(height: 20),
-                _buildStyledButton('CANDABA'),
-                SizedBox(height: 20),
-                _buildStyledButton('SAN LUIS'),
-              ],
+          Positioned(
+            bottom: 10,
+            left: 10,
+            right: 10,
+            child: Center(
+              child: Text(
+                churchName,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  shadows: [Shadow(blurRadius: 5, color: Colors.black)],
+                ),
+              ),
             ),
           ),
         ],
@@ -135,72 +116,70 @@ class _LivestreamPageState extends State<LivestreamPage> {
     );
   }
 
-  Widget _buildStyledButton(String title) {
-    return GestureDetector(
-      onTap: () {
-        _showStreamingOptions(title);
-      },
-      child: Container(
-        width: 200,
-        padding: EdgeInsets.symmetric(vertical: 15),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blueAccent, Colors.lightBlue],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(30.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              offset: Offset(0, 4),
-              blurRadius: 10.0,
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            title,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  void _showStreamingOptions(BuildContext context, String churchName) {
+    final liveUrl = _getLiveViewUrlForChurch(churchName);
 
-  void _showStreamingOptions(String churchName) {
-    setState(() {
-      _rtmpUrl = _getRtmpUrlForChurch(churchName);
-      _liveViewUrl = 'https://www.facebook.com/live/producer';
-    });
-
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('$churchName Livestream Options'),
-          content: Column(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _startLiveStream();
-                },
-                child: Text('Start Streaming'),
+              Text(
+                '$churchName Livestream',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               SizedBox(height: 20),
-              ElevatedButton(
+              ElevatedButton.icon(
+                icon: Icon(Icons.play_circle_outline, color: Colors.white),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  if (churchName == 'STA ANA' || churchName == 'ARAYAT') {
+                    // Attempt to open external browser for restricted videos
+                    _launchExternalBrowser(liveUrl);
+                  } else {
+                    // Open in WebView
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LivestreamViewer(liveUrl: liveUrl),
+                      ),
+                    );
+                  }
+                },
+                label: Text('Watch Livestream'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton.icon(
+                icon: Icon(Icons.stop, color: Colors.white),
                 onPressed: () {
                   Navigator.of(context).pop();
                   _stopLiveStream();
                 },
-                child: Text('Stop Streaming'),
+                label: Text('Stop Viewing'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
               ),
             ],
           ),
@@ -209,20 +188,38 @@ class _LivestreamPageState extends State<LivestreamPage> {
     );
   }
 
-  String _getRtmpUrlForChurch(String churchName) {
+  void _launchExternalBrowser(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      // Attempt to launch the URL
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      // Log error if unable to launch URL
+      print("Could not launch $url");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Could not open the livestream. Please check your URL or internet connection.")),
+      );
+    }
+  }
+
+  void _stopLiveStream() {
+    print("Stopped viewing livestream.");
+  }
+
+  String _getLiveViewUrlForChurch(String churchName) {
     switch (churchName) {
-      case 'STA ANA':
-        return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-STA-ANA';
-      case 'ARAYAT':
-        return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-ARAYAT';
       case 'MEXICO':
-        return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-MEXICO';
-      case 'CANDABA':
-        return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-CANDABA';
+        return 'https://www.facebook.com/stamonicademexicopampanga/videos/1248162299839570';
+      case 'ARAYAT':
+        return 'https://www.facebook.com/ApungTali1590/videos/3493001484342749';
+      case 'STA ANA':
+        return 'https://www.facebook.com/parokyanang.santaana/videos/1358592665112173';
       case 'SAN LUIS':
-        return 'rtmp://live-api-s.facebook.com:80/rtmp/FB-SAN-LUIS';
+        return 'https://www.facebook.com/SanLuisGonzaga1734/videos/2030145657470471';
+      case 'CANDABA':
+        return 'https://www.facebook.com/SanAndresCandaba/videos/414698628346062';
       default:
-        return _rtmpUrl;
+        return 'https://www.facebook.com/live';
     }
   }
 }

@@ -3,8 +3,13 @@ import 'log_in.dart'; // Import the login screen
 import 'map.dart'; // Import the map screen
 import 'livestream.dart'; // Import the livestream screen
 import 'schedule.dart'; // Import the schedule screen
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 void main() {
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+  }
   runApp(MyApp());
 }
 
@@ -93,6 +98,13 @@ class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
     }
   }
 
+  void _logOut() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -155,6 +167,12 @@ class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
             ],
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.grey[300]),
+            onPressed: _logOut, // Call the logout function
+          ),
+        ],
       ),
       body: Stack(
         children: [

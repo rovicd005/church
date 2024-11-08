@@ -206,36 +206,6 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
     }
   }
 
-  Future<void> _addAndDisplayEvent(String title, TimeOfDay time) async {
-    final url = Uri.parse('https://sanctisync.site/church/schedules/add_church_event.php');
-    final response = await http.post(url, body: {
-      'church_name': widget.churchName,
-      'event_name': title,
-      'event_date': _selectedDate.toIso8601String().split('T')[0], // Only the date part
-      'event_time': '${time.hour}:${time.minute.toString().padLeft(2, '0')}' // Formatting time
-    });
-
-    if (response.statusCode == 200) {
-      try {
-        final responseData = json.decode(response.body);
-        if (responseData['success'] == true) {
-          setState(() {
-            if (_events[_selectedDate] == null) {
-              _events[_selectedDate] = [];
-            }
-            _events[_selectedDate]?.add("$title at ${time.format(context)}");
-          });
-        } else {
-          print("Error from server: ${responseData['message']}");
-        }
-      } catch (e) {
-        print("Error decoding response: $e");
-      }
-    } else {
-      print("Failed to add event. Status code: ${response.statusCode}");
-    }
-  }
-
   Future<void> _deleteEvent(String event) async {
     final parts = event.split(" at ");
     if (parts.length != 2) return;
@@ -290,10 +260,6 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
               eventLoader: (day) => _events[day] ?? [],
             ),
             SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: () => _scheduleEvent(),
-              child: Text('Schedule Event for ${widget.churchName}'),
-            ),
             Expanded(
               child: ListView(
                 children: (_events[_selectedDate] ?? [])
@@ -316,64 +282,6 @@ class _ChurchScheduleScreenState extends State<ChurchScheduleScreen> {
           icon: Icon(Icons.delete, color: Colors.red),
           onPressed: () => _deleteEvent(event),
         ),
-      ),
-    );
-  }
-
-  void _scheduleEvent() async {
-    Map<String, dynamic>? eventDetails = await _showAddEventDialog();
-    if (eventDetails != null && eventDetails['title'] != null && eventDetails['time'] != null) {
-      String eventTitle = eventDetails['title'];
-      TimeOfDay eventTime = eventDetails['time'];
-      await _addAndDisplayEvent(eventTitle, eventTime);
-    }
-  }
-
-  Future<Map<String, dynamic>?> _showAddEventDialog() {
-    TextEditingController _eventController = TextEditingController();
-    TimeOfDay _selectedTime = TimeOfDay.now();
-
-    return showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add Event'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _eventController,
-              decoration: InputDecoration(hintText: 'Enter event title'),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () async {
-                TimeOfDay? pickedTime = await showTimePicker(
-                  context: context,
-                  initialTime: _selectedTime,
-                );
-                if (pickedTime != null) {
-                  _selectedTime = pickedTime;
-                }
-              },
-              child: Text('Select Time'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, null),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context, {
-                'title': _eventController.text,
-                'time': _selectedTime,
-              });
-            },
-            child: Text('Save'),
-          ),
-        ],
       ),
     );
   }

@@ -10,93 +10,90 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
+  final _emailController = TextEditingController(); // New controller for email
   final _passwordController = TextEditingController();
 
   bool _passwordVisible = false;
   bool _isLoginMode = true;
 
   // Login function
-  void _login() async {
+  Future<void> _login() async {
+    final url = Uri.parse('https://sanctisync.site/database/login.php'); // URL for login API
     try {
       final response = await http.post(
-        Uri.parse('https://145.223.108.82/database/login.php'), // Update with actual URL
+        url,
         headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
+          'Content-Type': 'application/x-www-form-urlencoded', // Correct content type
         },
-        body: jsonEncode(<String, String>{
+        body: {
           'api_request': 'true', // Flag to indicate API request
-          'email': _usernameController.text.trim(), // Use 'email' to match PHP code
+          'email': _usernameController.text.trim(),
           'password': _passwordController.text.trim(),
-        }),
+        },
       );
 
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+        final data = json.decode(response.body);
         if (data['status'] == 'success') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => LoadingScreen()),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['message'] ?? 'Login failed')),
-          );
+          _showMessage(data['message'] ?? 'Login failed');
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Server error: ${response.statusCode}')),
-        );
+        _showMessage('Server error: ${response.statusCode}');
       }
     } catch (e) {
       print('Error during login: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred. Please try again later.')),
-      );
+      _showMessage('An error occurred. Please try again later.');
     }
   }
 
   // Register function
-  void _register() async {
+  Future<void> _register() async {
+    final url = Uri.parse('https://sanctisync.site/database/register.php'); // URL for register API
     try {
       final response = await http.post(
-        Uri.parse('http://145.223.108.82/database/register.php'), // Update with actual URL
+        url,
         headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
+          'Content-Type': 'application/x-www-form-urlencoded', // Correct content type
         },
-        body: jsonEncode(<String, String>{
+        body: {
           'username': _usernameController.text.trim(),
+          'email': _emailController.text.trim(),
           'password': _passwordController.text.trim(),
-        }),
+        },
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+        final data = json.decode(response.body);
         if (data['status'] == 'success') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Registration successful. Please log in.')),
-          );
+          _showMessage('Registration successful. Please log in.');
           setState(() {
             _isLoginMode = true;
           });
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['message'] ?? 'Registration failed')),
-          );
+          _showMessage(data['message'] ?? 'Registration failed');
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Server error: ${response.statusCode}')),
-        );
+        _showMessage('Server error: ${response.statusCode}');
       }
     } catch (e) {
       print('Error during registration: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred. Please try again later.')),
-      );
+      _showMessage('An error occurred. Please try again later.');
     }
+  }
+
+  // Display message
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -131,10 +128,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   SizedBox(height: 50),
+                  if (!_isLoginMode) // Show email field only for registration
+                    TextField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        labelStyle: TextStyle(color: Colors.orangeAccent),
+                        filled: true,
+                        fillColor: Colors.white24,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: Icon(Icons.email, color: Colors.orangeAccent),
+                      ),
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  SizedBox(height: 20),
                   TextField(
                     controller: _usernameController,
                     decoration: InputDecoration(
-                      labelText: 'Email', // Update to "Email" to match PHP code
+                      labelText: _isLoginMode ? 'Email' : 'Username', // Change label based on mode
                       labelStyle: TextStyle(color: Colors.orangeAccent),
                       filled: true,
                       fillColor: Colors.white24,
@@ -196,6 +210,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       setState(() {
                         _isLoginMode = !_isLoginMode; // Toggle between login and register
+                        if (_isLoginMode) {
+                          _emailController.clear();
+                        }
                       });
                     },
                     child: Text(
