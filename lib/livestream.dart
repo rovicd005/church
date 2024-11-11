@@ -9,11 +9,11 @@ class LivestreamPage extends StatefulWidget {
 
 class _LivestreamPageState extends State<LivestreamPage> {
   final Map<String, bool> _churchStatus = {
+    'SAN LUIS': false,
+    'CANDABA': false,
+    'MEXICO': true,
     'STA ANA': true,
     'ARAYAT': false,
-    'MEXICO': true,
-    'CANDABA': false,
-    'SAN LUIS': false,
   };
 
   final Map<String, String> _scheduledTimes = {
@@ -30,6 +30,14 @@ class _LivestreamPageState extends State<LivestreamPage> {
     'SAN LUIS': 'assets/luis.jpg',
   };
 
+  final List<String> _churchOrder = [
+    'SAN LUIS',
+    'CANDABA',
+    'MEXICO',
+    'STA ANA',
+    'ARAYAT'
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,8 +53,8 @@ class _LivestreamPageState extends State<LivestreamPage> {
           crossAxisCount: 2,
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
-          children: _churchStatus.keys.map((churchName) {
-            bool isLive = _churchStatus[churchName]!;
+          children: _churchOrder.map((churchName) {
+            bool isLive = _churchStatus[churchName] ?? false;
             return _buildChurchCard(churchName, isLive);
           }).toList(),
         ),
@@ -191,10 +199,8 @@ class _LivestreamPageState extends State<LivestreamPage> {
   void _launchExternalBrowser(String url) async {
     final Uri uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      // Attempt to launch the URL
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      // Log error if unable to launch URL
       print("Could not launch $url");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Could not open the livestream. Please check your URL or internet connection.")),
