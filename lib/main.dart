@@ -1,47 +1,47 @@
 import 'package:flutter/material.dart';
-import 'log_in.dart'; // Import the login screen
-import 'map.dart'; // Import the map screen
-import 'livestream.dart'; // Import the livestream screen
-import 'schedule.dart'; // Import the schedule screen
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'log_in.dart';
+import 'map.dart';
+import 'livestream.dart';
+import 'schedule.dart';
+import 'livestream_viewer.dart';
 
-void main() {
-  if (defaultTargetPlatform == TargetPlatform.android) {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
-  }
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+  final InitializationSettings initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
+      String? payload = notificationResponse.payload;
+      runApp(MyApp(initialChurch: payload));
+    },
+  );
+
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  final String? initialChurch;
+
+  MyApp({this.initialChurch});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Church Livestream',
       theme: ThemeData(
-        primarySwatch: Colors.grey,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        appBarTheme: AppBarTheme(
-          color: Colors.transparent,
-          elevation: 0,
-          iconTheme: IconThemeData(color: Colors.grey[300]!),
-          titleTextStyle: TextStyle(
-            color: Colors.grey[300]!,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          backgroundColor: Colors.transparent,
-          selectedItemColor: Colors.grey[300]!,
-          unselectedItemColor: Colors.grey[500]!,
-          selectedIconTheme: IconThemeData(size: 30, color: Colors.grey[300]!),
-          unselectedIconTheme: IconThemeData(size: 24, color: Colors.grey[500]!),
-          selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey[300]!),
-          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 12, color: Colors.grey[500]!),
-        ),
+        primarySwatch: Colors.blue,
       ),
-      home: LoginScreen(), // Start with the LoginScreen
-      debugShowCheckedModeBanner: false,
+      home: initialChurch != null
+          ? LivestreamViewer(liveUrl: initialChurch!) // Navigate directly if initialChurch is provided
+          : LivestreamPage(),
     );
   }
 }
@@ -170,7 +170,7 @@ class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.logout, color: Colors.grey[300]),
-            onPressed: _logOut, // Call the logout function
+            onPressed: _logOut,
           ),
         ],
       ),

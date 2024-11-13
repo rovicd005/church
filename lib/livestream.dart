@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'livestream_viewer.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 class LivestreamPage extends StatefulWidget {
   @override
@@ -8,41 +12,98 @@ class LivestreamPage extends StatefulWidget {
 }
 
 class _LivestreamPageState extends State<LivestreamPage> {
-  final Map<String, bool> _churchStatus = {
-    'SAN LUIS': false,
-    'CANDABA': false,
-    'MEXICO': true,
-    'STA ANA': true,
-    'ARAYAT': false,
+  final DatabaseReference _databaseRef = FirebaseDatabase.instance.ref("churchStatus");
+  List<String> _notifiedChurches = []; // Track churches that have been notified
+
+  Map<String, dynamic> _churchData = {
+    'ARAYAT': {'isLive': false, 'liveUrl': '', 'imagePath': 'assets/ar.jpg'},
+    'CANDABA': {'isLive': false, 'liveUrl': '', 'imagePath': 'assets/background02.jpg'},
+    'MEXICO': {'isLive': false, 'liveUrl': '', 'imagePath': 'assets/mex.jpg'},
+    'SAN LUIS': {'isLive': false, 'liveUrl': '', 'imagePath': 'assets/luis.jpg'},
+    'STA ANA': {'isLive': false, 'liveUrl': '', 'imagePath': 'assets/sa.jpg'},
+    'Sanctisync': {'isLive': false, 'liveUrl': ''}
   };
 
-  final Map<String, String> _scheduledTimes = {
-    'ARAYAT': '10:00 AM',
-    'CANDABA': '12:00 PM',
-    'SAN LUIS': '3:00 PM',
-  };
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+    _listenToFirebaseUpdates();
+  }
 
-  final Map<String, String> _churchImages = {
-    'STA ANA': 'assets/sa.jpg',
-    'ARAYAT': 'assets/ar.jpg',
-    'MEXICO': 'assets/mex.jpg',
-    'CANDABA': 'assets/background02.jpg',
-    'SAN LUIS': 'assets/luis.jpg',
-  };
+  void _initializeNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+    AndroidInitializationSettings('@mipmap/ic_launcher');
+    final InitializationSettings initializationSettings =
+    InitializationSettings(android: initializationSettingsAndroid);
 
-  final List<String> _churchOrder = [
-    'SAN LUIS',
-    'CANDABA',
-    'MEXICO',
-    'STA ANA',
-    'ARAYAT'
-  ];
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
+        String? payload = notificationResponse.payload;
+        if (payload != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => LivestreamViewer(liveUrl: _churchData[payload]!['liveUrl'])),
+          );
+        }
+      },
+    );
+  }
+
+  void _showLiveNotification(String churchName) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    AndroidNotificationDetails(
+      'church_livestream_channel',
+      'Church Livestream',
+      channelDescription: 'Notifications for live church streams',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+    NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      'Live Now: $churchName',
+      '$churchName is now streaming live. Tap to view.',
+      platformChannelSpecifics,
+      payload: churchName, // Pass church name as payload
+    );
+  }
+
+  void _listenToFirebaseUpdates() {
+    _databaseRef.onValue.listen((event) {
+      final data = event.snapshot.value as Map<dynamic, dynamic>;
+      print("Received data from Firebase: $data");  // Log received data for debugging
+
+      setState(() {
+        _churchData = data.map((key, value) => MapEntry(
+            key.toString(),
+            value as Map<String, dynamic>
+        ));
+      });
+
+      // Check for live status and send notification if Sanctisync goes live
+      if (_churchData['Sanctisync']?['isLive'] == true && !_notifiedChurches.contains('Sanctisync')) {
+        _showLiveNotification("Sanctisync");
+        print("Notification sent for Sanctisync going live.");  // Debugging line
+        _notifiedChurches.add('Sanctisync');
+      } else if (_churchData['Sanctisync']?['isLive'] == false) {
+        _notifiedChurches.remove('Sanctisync'); // Reset if Sanctisync goes offline
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Church Livestream"),
+        title: Text(
+          "Church Livestream",
+          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.grey[850],
         centerTitle: true,
         elevation: 4.0,
@@ -53,8 +114,8 @@ class _LivestreamPageState extends State<LivestreamPage> {
           crossAxisCount: 2,
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
-          children: _churchOrder.map((churchName) {
-            bool isLive = _churchStatus[churchName] ?? false;
+          children: _churchData.keys.map((churchName) {
+            bool isLive = _churchData[churchName]['isLive'];
             return _buildChurchCard(churchName, isLive);
           }).toList(),
         ),
@@ -63,16 +124,17 @@ class _LivestreamPageState extends State<LivestreamPage> {
   }
 
   Widget _buildChurchCard(String churchName, bool isLive) {
+    final String? imagePath = _churchData[churchName]?['imagePath'];
+    print("Loading image for $churchName: $imagePath"); // Log to verify each path
+
     return GestureDetector(
-      onTap: () {
-        _showStreamingOptions(context, churchName);
-      },
+      onTap: () => _showStreamingOptions(context, churchName),
       child: Stack(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12.0),
             child: Image.asset(
-              _churchImages[churchName] ?? 'assets/default.jpg',
+              imagePath ?? 'assets/default.jpg',  // Default image path if null
               height: double.infinity,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -94,12 +156,8 @@ class _LivestreamPageState extends State<LivestreamPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                isLive ? 'Live Now' : 'Next Mass at ${_scheduledTimes[churchName] ?? 'N/A'}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
+                isLive ? 'Live Now' : 'Offline',
+                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -125,7 +183,14 @@ class _LivestreamPageState extends State<LivestreamPage> {
   }
 
   void _showStreamingOptions(BuildContext context, String churchName) {
-    final liveUrl = _getLiveViewUrlForChurch(churchName);
+    final liveUrl = _churchData[churchName]['liveUrl'] ?? '';
+
+    if (liveUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$churchName is not currently live.')),
+      );
+      return;
+    }
 
     showModalBottomSheet(
       context: context,
@@ -141,52 +206,26 @@ class _LivestreamPageState extends State<LivestreamPage> {
             children: [
               Text(
                 '$churchName Livestream',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 20),
               ElevatedButton.icon(
                 icon: Icon(Icons.play_circle_outline, color: Colors.white),
                 onPressed: () {
                   Navigator.of(context).pop();
-                  if (churchName == 'STA ANA' || churchName == 'ARAYAT') {
-                    // Attempt to open external browser for restricted videos
-                    _launchExternalBrowser(liveUrl);
-                  } else {
-                    // Open in WebView
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => LivestreamViewer(liveUrl: liveUrl),
-                      ),
-                    );
-                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LivestreamViewer(liveUrl: liveUrl)),
+                  );
                 },
                 label: Text('Watch Livestream'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
-                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                ),
-              ),
-              SizedBox(height: 10),
-              ElevatedButton.icon(
-                icon: Icon(Icons.stop, color: Colors.white),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _stopLiveStream();
-                },
-                label: Text('Stop Viewing'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+                  textStyle: TextStyle(fontSize: 18),
                 ),
               ),
             ],
@@ -194,38 +233,5 @@ class _LivestreamPageState extends State<LivestreamPage> {
         );
       },
     );
-  }
-
-  void _launchExternalBrowser(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      print("Could not launch $url");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Could not open the livestream. Please check your URL or internet connection.")),
-      );
-    }
-  }
-
-  void _stopLiveStream() {
-    print("Stopped viewing livestream.");
-  }
-
-  String _getLiveViewUrlForChurch(String churchName) {
-    switch (churchName) {
-      case 'MEXICO':
-        return 'https://www.facebook.com/stamonicademexicopampanga/videos/1248162299839570';
-      case 'ARAYAT':
-        return 'https://www.facebook.com/ApungTali1590/videos/3493001484342749';
-      case 'STA ANA':
-        return 'https://www.facebook.com/parokyanang.santaana/videos/1358592665112173';
-      case 'SAN LUIS':
-        return 'https://www.facebook.com/SanLuisGonzaga1734/videos/2030145657470471';
-      case 'CANDABA':
-        return 'https://www.facebook.com/SanAndresCandaba/videos/414698628346062';
-      default:
-        return 'https://www.facebook.com/live';
-    }
   }
 }

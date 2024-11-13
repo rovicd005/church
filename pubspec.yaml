@@ -2,45 +2,43 @@ name: management_church
 description: "A Flutter project for church management and livestreaming."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-# Versioning
 version: 1.0.0+1
 
-# Flutter SDK environment
 environment:
   sdk: '>=3.3.0 <4.0.0'
 
-# Project dependencies
 dependencies:
   flutter:
     sdk: flutter
-  http: ^0.13.3                           # For making HTTP requests
-  cupertino_icons: ^1.0.6                 # iOS style icons
-  google_maps_flutter: ^2.2.0             # Google Maps integration
-  url_launcher: ^6.0.9                    # or the latest version compatible with your Flutter SDK
+  http: ^0.13.3
+  cupertino_icons: ^1.0.6
+  google_maps_flutter: ^2.2.0
+  url_launcher: ^6.0.9
   webview_flutter: ^4.0.0
   webview_flutter_android: ^3.16.3
-  webview_flutter_wkwebview: ^3.14.0      # Embedding web content
-  table_calendar: ^3.0.9                  # Calendar scheduling
-  intl: ^0.18.0                           # Date formatting and internationalization
-  shared_preferences: ^2.1.1              # Local storage for user preferences
-  flutter_webrtc: ^0.9.28                 # WebRTC for livestreaming
-  flutter_ffmpeg: ^0.4.0                  # FFmpeg for video streaming
-  web_socket_channel: ^2.1.0              # WebSocket channel for OBS control
+  webview_flutter_wkwebview: ^3.14.0
+  table_calendar: ^3.0.9
+  intl: ^0.18.0
+  shared_preferences: ^2.1.1
+  flutter_webrtc: ^0.9.28
+  flutter_ffmpeg: ^0.4.0
+  web_socket_channel: ^2.1.0
+  firebase_core: ^2.17.0
+  firebase_database: ^10.1.0
+  flutter_local_notifications: ^12.0.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0                   # Linting for code quality
+  flutter_lints: ^3.0.0
 
 flutter_icons:
-    android: true
-    ios: true
-    image_path: "assets/ic_launcher.png"
-    adaptive_icon_background: "#FFA500"
-    adaptive_icon_foreground: "assets/ic_launcher.png"
+  android: true
+  ios: true
+  image_path: "assets/ic_launcher.png"
+  adaptive_icon_background: "#FFA500"
+  adaptive_icon_foreground: "assets/ic_launcher.png"
 
-
-# Flutter assets
 flutter:
   uses-material-design: true
   assets:
@@ -62,5 +60,3 @@ flutter:
     - assets/ar.jpg
     - assets/sa.jpg
     - assets/sf-img.jpg
-
-
