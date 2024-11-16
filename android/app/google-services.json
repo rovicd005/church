@@ -1,13 +1,14 @@
 {
   "project_info": {
-    "project_number": "714528045816",
-    "project_id": "church3-1e4ae",
-    "storage_bucket": "church3-1e4ae.appspot.com"
+    "project_number": "728673139082",
+    "firebase_url": "https://sanctisync-application-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "sanctisync-application",
+    "storage_bucket": "sanctisync-application.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:714528045816:android:a07dda9f0bcb70ddded90d",
+        "mobilesdk_app_id": "1:728673139082:android:c4c694879bcf5d7e76f073",
         "android_client_info": {
           "package_name": "com.example.management_church"
         }
@@ -15,7 +16,20 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB_DUuLp0LDnt-5MMrKUXXZMKOTd2SXLyU"
+          "current_key": "AIzaSyAclcVeNkqd17KqP29W1dPNUE4wQfkT1HE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAclcVeNkqd17KqP29W1dPNUE4wQfkT1HE"
         }
       ],
       "services": {

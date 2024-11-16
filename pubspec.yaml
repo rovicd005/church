@@ -25,7 +25,10 @@ dependencies:
   shared_preferences: ^2.1.1              # Local storage for user preferences
   flutter_webrtc: ^0.9.28                 # WebRTC for livestreaming
   flutter_ffmpeg: ^0.4.0                  # FFmpeg for video streaming
-  web_socket_channel: ^2.1.0              # WebSocket channel for OBS control
+  web_socket_channel: ^2.1.0
+  firebase_core: ^2.32.0
+  firebase_messaging: ^14.2.0             # WebSocket channel for OBS control
+  firebase_database: ^10.5.7
 
 dev_dependencies:
   flutter_test:

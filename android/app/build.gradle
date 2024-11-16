@@ -1,8 +1,8 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
-    id "dev.flutter.flutter-gradle-plugin"
+    id "dev.flutter.flutter-gradle-plugin" // Flutter Gradle plugin
+    id("com.google.gms.google-services") // Google services plugin for Firebase
 }
 
 def localProperties = new Properties()
@@ -13,27 +13,18 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
-if (flutterVersionCode == null) {
-    flutterVersionCode = "1"
-}
-
-def flutterVersionName = localProperties.getProperty("flutter.versionName")
-if (flutterVersionName == null) {
-    flutterVersionName = "1.0"
-}
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode")?.toInteger() ?: 1
+def flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
 
 android {
-    namespace = "com.example.management_church"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.management_church"
-        minSdkVersion 24 // Set minSdkVersion explicitly
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutterVersionCode.toInteger()
-        versionName = flutterVersionName
+        applicationId "com.example.management_church"
+        minSdkVersion 24
+        targetSdkVersion 34
+        versionCode 1
+        versionName "1.0"
     }
 
     compileOptions {
@@ -43,16 +34,25 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.debug // Use debug signing for testing
         }
     }
+}
+
+dependencies {
+    // Import the Firebase BoM (Bill of Materials)
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+
+    // Firebase dependencies
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging")
 }
 
 flutter {
     source = "../.."
 }
+
 tasks.withType(JavaCompile) {
     options.compilerArgs << "-Xlint:deprecation" << "-Xlint:unchecked"
 }
+apply plugin: 'com.google.gms.google-services' // Add this line at the bottom

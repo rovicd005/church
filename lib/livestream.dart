@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'livestream_viewer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -8,13 +9,9 @@ class LivestreamPage extends StatefulWidget {
 }
 
 class _LivestreamPageState extends State<LivestreamPage> {
-  final Map<String, bool> _churchStatus = {
-    'SAN LUIS': false,
-    'CANDABA': false,
-    'MEXICO': true,
-    'STA ANA': true,
-    'ARAYAT': false,
-  };
+  final DatabaseReference _churchStatusRef = FirebaseDatabase.instance.ref().child('churchStatus');
+  bool _isAnyChurchLive = false;
+  Map<dynamic, dynamic>? _statusData;
 
   final Map<String, String> _scheduledTimes = {
     'ARAYAT': '10:00 AM',
@@ -28,6 +25,7 @@ class _LivestreamPageState extends State<LivestreamPage> {
     'MEXICO': 'assets/mex.jpg',
     'CANDABA': 'assets/background02.jpg',
     'SAN LUIS': 'assets/luis.jpg',
+    'SanctiSync': 'assets/sf-img.jpg', // Add image for SanctiSync
   };
 
   final List<String> _churchOrder = [
@@ -35,8 +33,21 @@ class _LivestreamPageState extends State<LivestreamPage> {
     'CANDABA',
     'MEXICO',
     'STA ANA',
-    'ARAYAT'
+    'ARAYAT',
+    'SanctiSync', // Add SanctiSync to the display order
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _churchStatusRef.onValue.listen((event) {
+      final statusData = event.snapshot.value as Map<dynamic, dynamic>;
+      setState(() {
+        _statusData = statusData;
+        _isAnyChurchLive = statusData.values.contains(true);
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +57,25 @@ class _LivestreamPageState extends State<LivestreamPage> {
         backgroundColor: Colors.grey[850],
         centerTitle: true,
         elevation: 4.0,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.notifications,
+              color: _isAnyChurchLive ? Colors.red : Colors.white,
+            ),
+            onPressed: () {
+              if (_isAnyChurchLive) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("A church is live now!")),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("No church is live at the moment.")),
+                );
+              }
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
@@ -54,7 +84,7 @@ class _LivestreamPageState extends State<LivestreamPage> {
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
           children: _churchOrder.map((churchName) {
-            bool isLive = _churchStatus[churchName] ?? false;
+            bool isLive = _statusData?[churchName] == true;
             return _buildChurchCard(churchName, isLive);
           }).toList(),
         ),
@@ -151,38 +181,16 @@ class _LivestreamPageState extends State<LivestreamPage> {
                 icon: Icon(Icons.play_circle_outline, color: Colors.white),
                 onPressed: () {
                   Navigator.of(context).pop();
-                  if (churchName == 'STA ANA' || churchName == 'ARAYAT') {
-                    // Attempt to open external browser for restricted videos
-                    _launchExternalBrowser(liveUrl);
-                  } else {
-                    // Open in WebView
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => LivestreamViewer(liveUrl: liveUrl),
-                      ),
-                    );
-                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LivestreamViewer(liveUrl: liveUrl),
+                    ),
+                  );
                 },
                 label: Text('Watch Livestream'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
-                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-              ),
-              SizedBox(height: 10),
-              ElevatedButton.icon(
-                icon: Icon(Icons.stop, color: Colors.white),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _stopLiveStream();
-                },
-                label: Text('Stop Viewing'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
                   padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -194,22 +202,6 @@ class _LivestreamPageState extends State<LivestreamPage> {
         );
       },
     );
-  }
-
-  void _launchExternalBrowser(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      print("Could not launch $url");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Could not open the livestream. Please check your URL or internet connection.")),
-      );
-    }
-  }
-
-  void _stopLiveStream() {
-    print("Stopped viewing livestream.");
   }
 
   String _getLiveViewUrlForChurch(String churchName) {
@@ -224,6 +216,8 @@ class _LivestreamPageState extends State<LivestreamPage> {
         return 'https://www.facebook.com/SanLuisGonzaga1734/videos/2030145657470471';
       case 'CANDABA':
         return 'https://www.facebook.com/SanAndresCandaba/videos/414698628346062';
+      case 'SanctiSync':
+        return 'https://www.facebook.com/100083499875388/videos/884780077098939'; // Replace with actual live URL
       default:
         return 'https://www.facebook.com/live';
     }
