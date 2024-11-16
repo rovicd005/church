@@ -10,22 +10,9 @@
       "client_info": {
         "mobilesdk_app_id": "1:728673139082:android:c4c694879bcf5d7e76f073",
         "android_client_info": {
-          "package_name": "com.example.management_church"
+          "package_name": "com.Altanalyst.Sanctisyncapp"
         }
       },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAclcVeNkqd17KqP29W1dPNUE4wQfkT1HE"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
       "oauth_client": [],
       "api_key": [
         {

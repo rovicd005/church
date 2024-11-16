@@ -16,11 +16,11 @@ class _LivestreamViewerState extends State<LivestreamViewer> {
   @override
   void initState() {
     super.initState();
-    // Use the liveUrl passed from the LivestreamPage for the selected church
-    String embedUrl = "https://www.facebook.com/plugins/video.php?href=${Uri.encodeComponent(widget.liveUrl)}";
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(Uri.parse(embedUrl));
+      ..loadRequest(
+        Uri.parse("https://www.facebook.com/plugins/video.php?href=${Uri.encodeComponent(widget.liveUrl)}"),
+      );
   }
 
   @override

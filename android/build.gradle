@@ -1,15 +1,14 @@
 buildscript {
+    ext.kotlin_version = '1.9.0'
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.google.gms:google-services:4.4.2' // Add Google services classpath here
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.android.tools.build:gradle:8.0.2'
+        classpath 'com.google.gms:google-services:4.3.15' // or the latest version
     }
-}
-
-plugins {
-    id("com.google.gms.google-services") version "4.4.2"
 }
 
 allprojects {
@@ -19,6 +18,7 @@ allprojects {
     }
 }
 
+// Keep the following configurations for build directories
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
