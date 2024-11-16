@@ -2,12 +2,12 @@ buildscript {
     ext.kotlin_version = '1.9.0'
     repositories {
         google()
+        google()
         mavenCentral()
     }
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.android.tools.build:gradle:8.0.2'
-        classpath 'com.google.gms:google-services:4.3.15' // or the latest version
+        classpath 'com.android.tools.build:gradle:7.3.1' // Use the version that matches your project
+        classpath 'com.google.gms:google-services:4.3.15' // Firebase
     }
 }
 
@@ -17,7 +17,6 @@ allprojects {
         mavenCentral()
     }
 }
-
 // Keep the following configurations for build directories
 rootProject.buildDir = "../build"
 subprojects {
