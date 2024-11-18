@@ -1,15 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart'; // Import Firebase options
+import 'dart:io'; // Import for platform check
+
 import 'log_in.dart'; // Import the login screen
 import 'map.dart'; // Import the map screen
 import 'livestream.dart'; // Import the livestream screen
 import 'schedule.dart'; // Import the schedule screen
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 
-void main() {
-  if (defaultTargetPlatform == TargetPlatform.android) {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+  } catch (e) {
+    print('Firebase initialization error: $e');
   }
+
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
+
   runApp(MyApp());
 }
 
@@ -36,8 +53,8 @@ class MyApp extends StatelessWidget {
           unselectedItemColor: Colors.grey[500]!,
           selectedIconTheme: IconThemeData(size: 30, color: Colors.grey[300]!),
           unselectedIconTheme: IconThemeData(size: 24, color: Colors.grey[500]!),
-          selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey[300]!),
-          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 12, color: Colors.grey[500]!),
+          selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 12),
         ),
       ),
       home: LoginScreen(), // Start with the LoginScreen
@@ -54,27 +71,10 @@ class MapAndLivestreamScreen extends StatefulWidget {
 class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
   int _selectedIndex = 0;
 
-  final Map<int, String> _labels = {
-    0: 'Map',
-    1: 'Livestream',
-    2: 'Schedule',
-  };
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'You tapped: ${_labels[index]}',
-          style: TextStyle(color: Colors.black),
-        ),
-        duration: Duration(seconds: 1),
-        backgroundColor: Colors.grey[200]!,
-      ),
-    );
 
     switch (index) {
       case 0:
@@ -86,7 +86,7 @@ class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
       case 1:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => LivestreamPage()),
+          MaterialPageRoute(builder: (context) => LivestreamPage()), // Ensure correct navigation
         );
         break;
       case 2:
@@ -170,7 +170,7 @@ class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.logout, color: Colors.grey[300]),
-            onPressed: _logOut, // Call the logout function
+            onPressed: _logOut,
           ),
         ],
       ),
@@ -182,14 +182,15 @@ class _MapAndLivestreamScreenState extends State<MapAndLivestreamScreen> {
               fit: BoxFit.cover,
             ),
           ),
-          Column(
-            children: [
-              Expanded(
-                child: Center(
-                  // Additional content can be added here
-                ),
+          Center(
+            child: Text(
+              'Welcome to SanctiSync!',
+              style: TextStyle(
+                color: Colors.grey[300],
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
-            ],
+            ),
           ),
         ],
       ),
